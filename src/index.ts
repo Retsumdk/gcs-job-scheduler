@@ -15,6 +15,8 @@ interface Config {
   retries: number;
 }
 
+const name = "gcs-job-scheduler";
+
 const DEFAULTS: Config = {
   baseUrl: "https://api.example.com",
   timeout: 30000,
