@@ -1,53 +1,16 @@
-#!/usr/bin/env bun
-/**
- * gcs-job-scheduler - gcs job scheduler implementation
- * Built by Retsumdk
- */
-
-import { Command } from "commander";
-import { existsSync, readFileSync } from "fs";
-import { join } from "path";
-
-interface Config {
-  apiKey?: string;
-  baseUrl: string;
-  timeout: number;
-  retries: number;
-}
-
-const name = "gcs-job-scheduler";
-
-const DEFAULTS: Config = {
-  baseUrl: "https://api.example.com",
-  timeout: 30000,
-  retries: 3,
-};
-
-function loadConfig(): Config {
-  const cfgPath = join(process.cwd(), "config.json");
-  if (existsSync(cfgPath)) {
-    try {
-      return { ...DEFAULTS, ...JSON.parse(readFileSync(cfgPath, "utf-8")) };
-    } catch { /* ignore */ }
-  }
-  return { ...DEFAULTS };
-}
-
-async function main(cfg: Config) {
-  console.log(`[${name}] Connected to ${cfg.baseUrl}`);
-  console.log(`[${name}] Timeout: ${cfg.timeout}ms | Retries: ${cfg.retries}`);
-  // TODO: implement your logic here
-  console.log(`[${name}] Done.`);
-}
-
-const program = new Command();
-program.name("gcs-job-scheduler").description("gcs job scheduler implementation").version("1.0.0")
-  .option("-c, --config <path>", "Config file path", "config.json")
-  .option("-v, --verbose", "Verbose mode")
-  .action(async (opts) => {
-    const cfg = loadConfig();
-    if (opts.verbose) console.log("Verbose mode on");
-    try { await main(cfg); }
-    catch (e) { console.error(`Error: ${e}`); process.exit(1); }
-  });
-program.parse(process.argv);
+export * from "./types.js";
+export { Scheduler, formatMs } from "./scheduler.js";
+export { SchedulerError, isSchedulerError } from "./errors.js";
+export { parseCron, cronMatches, cronNext, describeCron, type CronExpr } from "./cron.js";
+export {
+  validateSchedule,
+  describeSchedule,
+  nextRunAfter,
+  alignIntervalStart,
+  MAX_INTERVAL_SECONDS,
+} from "./schedule.js";
+export { saveState, loadState, parseState } from "./store.js";
+export { startServer, type ServeOptions } from "./server.js";
+export { createHttpHandler, runWithTimeout, TimeoutError } from "./handlers.js";
+export { runCli, isKnownCommand, COMMANDS, HELP, UsageError } from "./cli.js";
+export { runDemo } from "./demo.js";

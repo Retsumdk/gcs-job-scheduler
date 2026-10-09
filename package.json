@@ -1,17 +1,50 @@
 {
   "name": "gcs-job-scheduler",
-  "description": "gcs job scheduler implementation",
   "version": "1.0.0",
+  "description": "Durable cron/interval job scheduler for GCS-style maintenance jobs: retries with exponential backoff, run history, HTTP API, and a zero-dependency CLI",
   "type": "module",
-  "scripts": {
-    "test": "bun test",
-    "build": "tsc"
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
-  "dependencies": {
-    "commander": "^11.1.0"
+  "bin": {
+    "gcs-job-scheduler": "./dist/cli.js"
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "demo": "node dist/cli.js demo",
+    "test": "bun test",
+    "prepare": "tsc -p tsconfig.build.json"
+  },
+  "keywords": [
+    "scheduler",
+    "cron",
+    "gcs",
+    "google-cloud-storage",
+    "job-scheduler",
+    "retry",
+    "backoff",
+    "maintenance",
+    "automation"
+  ],
+  "license": "MIT",
+  "author": "Retsumdk <Retsumdk@users.noreply.github.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Retsumdk/gcs-job-scheduler.git"
   },
   "devDependencies": {
-    "bun-types": "^1.0.0",
-    "typescript": "^5.3.0"
+    "@types/node": "^22.10.0",
+    "bun-types": "^1.2.21",
+    "typescript": "^5.7.0"
   }
 }
