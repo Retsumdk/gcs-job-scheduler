@@ -223,6 +223,10 @@ with matching HTTP status codes (400/404/409/500); unauthenticated mutations get
 - **Persistence** — JSON with atomic tmp+rename writes; history capped at
   `historyLimit` (default 1000) runs. Corrupt state files throw `CORRUPTION` errors
   rather than silently resetting.
+- **Overlapping ticks are safe** — a job with an in-flight scheduled attempt is
+  skipped by concurrent ticks (two `/tick` requests, or a loop racing the HTTP
+  API, cannot double-fire the same due slot). Manual `runOnce` calls are
+  intentionally outside this guard — they are explicit user-triggered runs.
 - **Not a process supervisor** — one process owns the state file. Run multiple
   replicas only if each has its own state path.
 

@@ -65,6 +65,7 @@ export class Scheduler {
   private jobs = new Map<string, Job>();
   private runLog: RunRecord[] = [];
   private handlers = new Map<string, HandlerFn>();
+  private inFlight = new Set<string>();
   private seq = 0;
   private runSeq = 0;
   private readonly clock: () => number;
@@ -356,24 +357,30 @@ export class Scheduler {
     const now = this.clock();
     const result: TickResult = { started: 0, succeeded: 0, failed: 0, retrying: 0, runs: [] };
     for (const job of this.due(now)) {
-      const open = this.openRun(job.id);
-      const run: RunRecord =
-        open ?? {
-          id: `r-${String(++this.runSeq).padStart(6, "0")}`,
-          jobId: job.id,
-          trigger: "scheduled",
-          startedAt: now,
-          attempts: [],
-          outcome: "running",
-        };
-      if (!open) this.addRun(run);
-      result.started += 1;
-      const attemptNo = run.attempts.length + 1;
-      await this.settleAttempt(job, run, attemptNo, { allowRetry: true, affectsSchedule: true });
-      if (run.outcome === "succeeded") result.succeeded += 1;
-      else if (run.outcome === "failed") result.failed += 1;
-      else if (run.outcome === "retrying") result.retrying += 1;
-      result.runs.push(run);
+      if (this.inFlight.has(job.id)) continue;
+      this.inFlight.add(job.id);
+      try {
+        const open = this.openRun(job.id);
+        const run: RunRecord =
+          open ?? {
+            id: `r-${String(++this.runSeq).padStart(6, "0")}`,
+            jobId: job.id,
+            trigger: "scheduled",
+            startedAt: now,
+            attempts: [],
+            outcome: "running",
+          };
+        if (!open) this.addRun(run);
+        result.started += 1;
+        const attemptNo = run.attempts.length + 1;
+        await this.settleAttempt(job, run, attemptNo, { allowRetry: true, affectsSchedule: true });
+        if (run.outcome === "succeeded") result.succeeded += 1;
+        else if (run.outcome === "failed") result.failed += 1;
+        else if (run.outcome === "retrying") result.retrying += 1;
+        result.runs.push(run);
+      } finally {
+        this.inFlight.delete(job.id);
+      }
     }
     this.pruneHistory();
     return result;

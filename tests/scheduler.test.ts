@@ -153,6 +153,33 @@ describe("tick execution", () => {
     expect(t.started).toBe(1);
     expect(s.runs()).toHaveLength(1);
   });
+  test("overlapping ticks never double-fire a due job", async () => {
+    let nowMs = BASE;
+    let calls = 0;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const s = new Scheduler({
+      clock: () => nowMs,
+      handlers: {
+        gated: async () => {
+          calls += 1;
+          await gate;
+          return "ok";
+        },
+      },
+    });
+    s.add({ name: "a", every: 1, handler: { kind: "named", handler: "gated" } });
+    nowMs = BASE + 5_000;
+    const both = Promise.all([s.tick(), s.tick()]);
+    expect(calls).toBe(1);
+    release();
+    const [first, second] = await both;
+    expect(first.started).toBe(1);
+    expect(second.started).toBe(0);
+    expect((s.get("a") as Job).lastStatus).toBe("succeeded");
+  });
 
   test("transient failures retry on the backoff timeline and recover", async () => {
     let calls = 0;
